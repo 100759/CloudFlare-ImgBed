@@ -28,6 +28,7 @@ compatibility_date = "2024-08-21"
 directory = "../../frontend-dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
+run_worker_first = true
 `;
 
 // D1 数据库
@@ -59,6 +60,14 @@ bucket_name = "${env.R2_BUCKET_NAME}"
 }
 
 // 业务环境变量（从 JSON 解析）
+if (env.CUSTOM_DOMAIN) {
+    toml += `
+[[routes]]
+pattern = "${env.CUSTOM_DOMAIN}"
+custom_domain = true
+`;
+}
+
 if (env.WORKER_VARS) {
     try {
         const vars = JSON.parse(env.WORKER_VARS);

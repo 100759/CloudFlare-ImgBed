@@ -1,5 +1,10 @@
 import { fetchPageConfig } from "../utils/sysConfig";
 
+const JSON_HEADERS = {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
+};
+
 export async function onRequest(context) {
     const { env } = context;
     const PageConfig = await fetchPageConfig(env);
@@ -22,7 +27,7 @@ export async function onRequest(context) {
 
     // 检查 USER_CONFIG 是否为空或未定义
     if (!userConfig) {
-        return new Response(JSON.stringify({}), { status: 200 });
+        return new Response(JSON.stringify({}), { status: 200, headers: JSON_HEADERS });
     }
 
     try {
@@ -30,12 +35,12 @@ export async function onRequest(context) {
         const parsedConfig = userConfig;
         // 检查解析后的结果是否为对象
         if (typeof parsedConfig === 'object' && parsedConfig !== null) {
-            return new Response(JSON.stringify(parsedConfig), { status: 200 });
+            return new Response(JSON.stringify(parsedConfig), { status: 200, headers: JSON_HEADERS });
         } else {
-            return new Response(JSON.stringify({}), { status: 200 });
+            return new Response(JSON.stringify({}), { status: 200, headers: JSON_HEADERS });
         }
     } catch (error) {
         // 捕捉解析错误并返回空对象
-        return new Response(JSON.stringify({}), { status: 200 });
+        return new Response(JSON.stringify({}), { status: 200, headers: JSON_HEADERS });
     }
 }

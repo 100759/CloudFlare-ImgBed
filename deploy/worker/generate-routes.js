@@ -261,6 +261,23 @@ function createNextRequest(input, init, baseRequest) {
     return new Request(url, init);
 }
 
+function withAssetCacheHeaders(request, response) {
+    const url = new URL(request.url);
+    const headers = new Headers(response.headers);
+
+    if (url.pathname === '/' || url.pathname.endsWith('.html')) {
+        headers.set('Cache-Control', 'public, max-age=60, must-revalidate');
+    } else if (/\\.(?:js|css|woff2?|png|jpe?g|gif|webp|svg|ico)$/i.test(url.pathname)) {
+        headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+
+    return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+    });
+}
+
 async function executeChain(middlewares, handler, context) {
     const chain = [...middlewares, handler];
     let index = 0;
@@ -285,11 +302,21 @@ export default {
         const url = new URL(request.url);
         const pathname = url.pathname;
 
+        if (pathname.endsWith('.map')) {
+            return new Response('Not Found', {
+                status: 404,
+                headers: {
+                    'Cache-Control': 'public, max-age=31536000, immutable',
+                },
+            });
+        }
+
         const matched = matchRoute(pathname);
 
         if (!matched) {
             if (env.ASSETS) {
-                return env.ASSETS.fetch(request);
+                const response = await env.ASSETS.fetch(request);
+                return withAssetCacheHeaders(request, response);
             }
             return new Response('Not Found', { status: 404 });
         }
